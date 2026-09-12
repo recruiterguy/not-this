@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Not This.</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon48.png" alt="" width="24" height="24">
+    <h1>Not This. <small>low-effort comment collapser</small></h1>
+  </header>
+
+  <label class="row switch-row">
+    <span>Enabled</span>
+    <span class="switch">
+      <input type="checkbox" id="enabled">
+      <span class="slider"></span>
+    </span>
+  </label>
+
+  <div id="body">
+    <fieldset>
+      <legend>Collapse comments that are…</legend>
+      <label class="row"><input type="checkbox" data-rule="gif"> just a GIF</label>
+      <label class="row"><input type="checkbox" data-rule="image"> just a static image</label>
+      <label class="row"><input type="checkbox" data-rule="emote"> just emoji or emotes</label>
+      <label class="row"><input type="checkbox" data-rule="phrase"> a stock phrase <small>("This.", "lol", "Take my upvote", r/whoosh…)</small></label>
+      <label class="row"><input type="checkbox" data-rule="link"> just a link</label>
+      <label class="row"><input type="checkbox" data-rule="bot"> from a bot <small>(AutoModerator, "I am a bot", RemindMe!)</small></label>
+      <label class="row"><input type="checkbox" data-rule="pasta"> well-known copypasta</label>
+      <label class="row"><input type="checkbox" data-rule="quote"> just a quote of the parent</label>
+      <label class="row"><input type="checkbox" data-rule="short"> shorter than <input type="number" id="shortWords" min="1" max="20" class="num"> words</label>
+      <label class="row"><input type="checkbox" data-rule="score"> scored below <input type="number" id="scoreBelow" min="-999" max="999" class="num"></label>
+    </fieldset>
+
+    <fieldset id="modeGroup">
+      <legend>Behavior</legend>
+      <label class="row"><input type="radio" name="mode" value="collapse"> Collapse them (click to expand)</label>
+      <label class="row"><input type="radio" name="mode" value="hide"> Hide them completely</label>
+      <label class="row"><input type="checkbox" id="keepReplies"> Keep replies visible when collapsing</label>
+      <label class="row"><input type="checkbox" id="showCounter"> Show "N low-effort comments hidden" on the page</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Muted users <small>(one per line, always collapsed)</small></legend>
+      <textarea id="mutedUsers" rows="3" spellcheck="false" placeholder="username"></textarea>
+    </fieldset>
+  </div>
+
+  <p id="status" class="status">Open a Reddit thread to see stats.</p>
+
+  <p class="lifetime">
+    <span id="lifetime">All time: …</span>
+    <button type="button" id="reset" class="link">Reset</button>
+  </p>
+
+  <footer>
+    <span>Changes apply instantly. Reload if a page looks stale.</span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

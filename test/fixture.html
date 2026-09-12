@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Not This. — local fixture</title>
+<link rel="stylesheet" href="../src/content.css">
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 20px; color: #1c1c1c; background: #f6f7f8; }
+  h1 { font-size: 18px; } h2 { font-size: 15px; margin-top: 28px; }
+  .note { color: #666; font-size: 13px; }
+  #controls { position: sticky; top: 0; z-index: 5; background: #fff; border: 1px solid #ddd; padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  #results { font-family: ui-monospace, monospace; font-size: 12px; white-space: pre; background: #fff; border: 1px solid #ddd; padding: 8px 12px; border-radius: 6px; overflow-x: auto; }
+  img { background: #ddd; display: inline-block; vertical-align: middle; }
+  .fail { color: #b00020; font-weight: 600; }
+
+  /* --- Stand-in for new Reddit's <shreddit-comment> rendering --- */
+  shreddit-comment { display: block; border-left: 2px solid #ccc; padding: 6px 0 6px 12px; margin: 6px 0; background: #fff; }
+  shreddit-comment [slot="commentMeta"] { font-size: 12px; color: #555; }
+  shreddit-comment [slot="comment"] { margin: 4px 0; }
+  shreddit-comment [slot="children"], #comment-children { margin-left: 8px; }
+  /* #new honours the `collapsed` attribute like Reddit does; #new-fallback ignores it on purpose */
+  #new shreddit-comment[collapsed] [slot="comment"],
+  #new shreddit-comment[collapsed] [slot="actionRow"],
+  #new shreddit-comment[collapsed] [slot="children"],
+  #new shreddit-comment[collapsed] #comment-children { display: none; }
+  shreddit-player { display: block; background: #bbb; }
+  blockquote { border-left: 3px solid #ccc; margin: 4px 0; padding-left: 8px; color: #555; }
+
+  /* --- Stand-in for old Reddit --- */
+  .commentarea .thing.comment { background: #fff; margin: 6px 0; padding: 6px 10px; border-left: 2px solid #ccc; }
+  .commentarea .tagline { font-size: 12px; color: #555; }
+  .commentarea .thing.collapsed > .entry .usertext-body,
+  .commentarea .thing.collapsed > .child { display: none; }
+  .commentarea .child { margin-left: 16px; }
+</style>
+</head>
+<body>
+<h1>Not This. — local fixture</h1>
+<p class="note">Loads the content script directly (no extension APIs) and runs it against hand-written markup for both Reddit UIs under several settings scenarios. <code>data-expect</code> on each comment names the rule that should fire.</p>
+
+<div id="controls">
+  <label>Scenario <select id="scenario"></select></label>
+  <button id="run">Run</button>
+  <button id="runAll">Run all scenarios</button>
+  <span id="summary"></span>
+</div>
+
+<h2>New Reddit (shreddit)</h2>
+<div id="new">
+  <shreddit-comment thingid="t1_a" author="alice" depth="0" data-expect="keep">
+    <div slot="commentMeta">alice · 2h — normal comment</div>
+    <div slot="comment"><div class="md"><p>A perfectly normal comment with actual words in it.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_b" author="bob" depth="0" data-expect="gif">
+    <div slot="commentMeta">bob · 2h — GIPHY gif</div>
+    <div slot="comment"><div class="md"><p><a href="https://giphy.com/gifs/reaction-abc123"><img alt="gif" src="https://external-preview.redd.it/abc.gif?width=300" width="300" height="200"></a></p></div></div>
+    <div slot="children">
+      <shreddit-comment thingid="t1_b1" author="carol" depth="1" data-expect="keep" data-child-of-collapsed="1">
+        <div slot="commentMeta">carol · 1h — text reply under a gif</div>
+        <div slot="comment"><div class="md"><p>lol that is a good one honestly</p></div></div>
+      </shreddit-comment>
+    </div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_c" author="dave" depth="0" data-expect="gif">
+    <div slot="commentMeta">dave · 2h — uploaded .gif</div>
+    <div slot="comment"><div class="md"><p><img src="https://i.redd.it/xyz789.gif" width="320" height="180"></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_e" author="frank" depth="0" data-expect="image">
+    <div slot="commentMeta">frank · 2h — static image only</div>
+    <div slot="comment"><div class="md"><p><img src="https://preview.redd.it/photo.png?width=640&amp;format=png" width="300" height="200"></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_f" author="grace" depth="0" data-expect="keep">
+    <div slot="commentMeta">grace · 2h — gif plus real text</div>
+    <div slot="comment"><div class="md"><p>This is exactly how I felt when I saw the results:</p><p><img alt="gif" src="https://external-preview.redd.it/def.gif" width="300" height="200"></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_g" author="heidi" depth="0" data-expect="emote">
+    <div slot="commentMeta">heidi · 2h — emote image only</div>
+    <div slot="comment"><div class="md"><p><img alt=":snoo_facepalm:" src="https://www.redditstatic.com/emote/t5_2qh1i/facepalm.png" width="20" height="20"></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_g2" author="hana" depth="0" data-expect="emote">
+    <div slot="commentMeta">hana · 2h — emoji only</div>
+    <div slot="comment"><div class="md"><p>😂😂😂</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_h" author="ivan" depth="0" data-expect="keep">
+    <div slot="commentMeta">ivan · 2h — emote inside text</div>
+    <div slot="comment"><div class="md"><p>Nice <img alt=":snoo:" src="https://www.redditstatic.com/emote/t5_2qh1i/snoo.png" width="20" height="20"> work, the second half was better than the first.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_i" author="judy" depth="0" collapsed data-expect="native">
+    <div slot="commentMeta">judy · 2h — gif already collapsed by Reddit</div>
+    <div slot="comment"><div class="md"><p><img alt="gif" src="https://external-preview.redd.it/ghi.gif" width="300" height="200"></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_p1" author="kim" depth="0" data-expect="phrase">
+    <div slot="commentMeta">kim · 2h — "This."</div>
+    <div slot="comment"><div class="md"><p>This.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_p2" author="lars" depth="0" data-expect="phrase">
+    <div slot="commentMeta">lars · 2h — "Take my upvote!!"</div>
+    <div slot="comment"><div class="md"><p>Take my upvote!!</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_p3" author="mona" depth="0" data-expect="phrase">
+    <div slot="commentMeta">mona · 2h — "lmaooo"</div>
+    <div slot="comment"><div class="md"><p>lmaooo</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_p4" author="nate" depth="0" data-expect="phrase">
+    <div slot="commentMeta">nate · 2h — "r/whoosh"</div>
+    <div slot="comment"><div class="md"><p><a href="/r/whoosh">r/whoosh</a></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_p5" author="olga" depth="0" data-expect="keep">
+    <div slot="commentMeta">olga · 2h — starts with "this" but has content</div>
+    <div slot="comment"><div class="md"><p>This is the part most people miss: the second clause only applies after the first one fails.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_l1" author="pat" depth="0" data-expect="link">
+    <div slot="commentMeta">pat · 2h — bare link</div>
+    <div slot="comment"><div class="md"><p><a href="https://example.com/news/story">https://example.com/news/story</a></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_l2" author="quinn" depth="0" data-expect="keep">
+    <div slot="commentMeta">quinn · 2h — link with commentary</div>
+    <div slot="comment"><div class="md"><p>Source for the claim above: <a href="https://example.com/news/story">https://example.com/news/story</a></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_bot1" author="AutoModerator" depth="0" data-expect="bot">
+    <div slot="commentMeta">AutoModerator · 2h — sticky</div>
+    <div slot="comment"><div class="md"><p>Welcome to the subreddit. Please read the rules before posting.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_bot2" author="helpful_user" depth="0" data-expect="bot">
+    <div slot="commentMeta">helpful_user · 2h — "I am a bot" footer</div>
+    <div slot="comment"><div class="md"><p>Here is a summary of the article. <em>I am a bot, and this action was performed automatically.</em></p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_bot3" author="rae" depth="0" data-expect="bot">
+    <div slot="commentMeta">rae · 2h — RemindMe! invocation</div>
+    <div slot="comment"><div class="md"><p>RemindMe! 2 days</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_pasta1" author="sam" depth="0" data-expect="pasta">
+    <div slot="commentMeta">sam · 2h — copypasta (Bee Movie)</div>
+    <div slot="comment"><div class="md"><p>According to all known laws of aviation, there is no way a bee should be able to fly. Its wings are too small to get its fat little body off the ground.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_pasta2" author="tess" depth="0" data-expect="pasta">
+    <div slot="commentMeta">tess · 2h — copypasta (Krusty Krab)</div>
+    <div slot="comment"><div class="md"><p>Is this the Krusty Krab? No, this is Patrick.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_q1" author="uma" depth="0" data-expect="quote">
+    <div slot="commentMeta">uma · 2h — quote only</div>
+    <div slot="comment"><div class="md"><blockquote><p>the second clause only applies after the first one fails</p></blockquote></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_q2" author="vic" depth="0" data-expect="keep">
+    <div slot="commentMeta">vic · 2h — quote plus reply</div>
+    <div slot="comment"><div class="md"><blockquote><p>the second clause only applies after the first one fails</p></blockquote><p>That's not what the document says, see section 4.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_s1" author="wes" depth="0" data-expect="short">
+    <div slot="commentMeta">wes · 2h — two words (short rule)</div>
+    <div slot="comment"><div class="md"><p>Great point</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_sc1" author="xan" depth="0" score="-7" data-expect="score">
+    <div slot="commentMeta">xan · 2h — score -7 (score rule)</div>
+    <div slot="comment"><div class="md"><p>I still think the original design was better and nobody will change my mind.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_m1" author="spamlord" depth="0" data-expect="muted">
+    <div slot="commentMeta">spamlord · 2h — muted user (muted scenario only)</div>
+    <div slot="comment"><div class="md"><p>Another perfectly reasonable comment from a user you happen to have muted.</p></div></div>
+  </shreddit-comment>
+
+  <!-- Real 2026 markup: slotted parts nested inside a grid wrapper, GIPHY gif as shreddit-player -->
+  <shreddit-comment thingid="t1_p9chnd8" author="Dean-O-Machino" depth="0" data-expect="gif">
+    <div class="grid comment-main-grid">
+      <div class="relative"></div>
+      <div class="min-w-0 col-start-2"><div slot="commentMeta">Dean-O-Machino · 1h — real GIPHY markup, nested wrapper</div></div>
+      <div class="min-w-0 col-start-2">
+        <div class="md text-14-scalable" id="t1_p9chnd8-comment-rtjson-content" slot="comment">
+          <shreddit-async-loader bundlename="shreddit_player_loader">
+            <div id="t1_p9chnd8-post-rtjson-content" class="py-0 [--emote-size:20px]" dir="auto">
+              <p> </p><figure class="rte-media"><div>
+                <a href="https://external-preview.redd.it/YvBP.gif?auto=webp" rel="noopener ugc" target="_blank" class="w-fit"><div class="isolate overflow-hidden rounded-1 block" style="width: 240px; height: 180px;">
+                  <shreddit-async-loader bundlename="shreddit_player_loader">
+                    <shreddit-player src="https://external-preview.redd.it/YvBP.gif?width=266&amp;format=mp4" gif="" comment-id="t1_p9chnd8" style="width:240px;height:180px">
+                      <source src="https://external-preview.redd.it/YvBP.gif?width=266&amp;format=mp4">
+                    </shreddit-player>
+                  </shreddit-async-loader>
+                </div></a>
+              </div></figure><p></p>
+            </div>
+          </shreddit-async-loader>
+        </div>
+      </div>
+      <div class="min-w-0 col-start-2"><div class="min-h-xl" slot="actionRow">Reply · Share · …</div></div>
+      <div id="comment-children" class="col-span-2">
+        <shreddit-comment thingid="t1_child1" author="replier" depth="1" data-expect="keep" data-child-of-collapsed="1">
+          <div class="grid comment-main-grid">
+            <div class="min-w-0 col-start-2"><div slot="commentMeta">replier · 30m — text reply nested in real markup</div></div>
+            <div class="min-w-0 col-start-2"><div class="md" slot="comment"><p>haha nice, that is exactly the clip I was thinking of</p></div></div>
+            <div id="comment-children" class="col-span-2"></div>
+          </div>
+        </shreddit-comment>
+      </div>
+    </div>
+  </shreddit-comment>
+</div>
+
+<h2>New Reddit, when the <code>collapsed</code> attribute is ignored (fallback path)</h2>
+<div id="new-fallback">
+  <shreddit-comment thingid="t1_fb1" author="kate" depth="0" data-expect="gif" data-expect-fallback="1">
+    <div class="grid comment-main-grid">
+      <div class="min-w-0 col-start-2"><div slot="commentMeta">kate · 2h — GIPHY, attribute ignored</div></div>
+      <div class="min-w-0 col-start-2"><div class="md" slot="comment"><figure class="rte-media"><a href="https://external-preview.redd.it/abc.gif?auto=webp"><shreddit-player src="https://external-preview.redd.it/abc.gif?width=266&amp;format=mp4" gif="" style="width:240px;height:120px"><source src="https://external-preview.redd.it/abc.gif?width=266&amp;format=mp4"></shreddit-player></a></figure></div></div>
+      <div class="min-w-0 col-start-2"><div slot="actionRow">Reply · Share</div></div>
+      <div id="comment-children" class="col-span-2">
+        <shreddit-comment thingid="t1_fb1c" author="leo" depth="1" data-expect="keep" data-child-of-collapsed="1">
+          <div class="grid comment-main-grid">
+            <div class="min-w-0 col-start-2"><div slot="commentMeta">leo · 1h — reply</div></div>
+            <div class="min-w-0 col-start-2"><div class="md" slot="comment"><p>reply text that should survive in keep-replies mode</p></div></div>
+          </div>
+        </shreddit-comment>
+      </div>
+    </div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_fb2" author="mia" depth="0" data-expect="keep">
+    <div class="grid comment-main-grid">
+      <div class="min-w-0 col-start-2"><div slot="commentMeta">mia · 2h — text</div></div>
+      <div class="min-w-0 col-start-2"><div class="md" slot="comment"><p>Words, words, words, and a few more words.</p></div></div>
+    </div>
+  </shreddit-comment>
+</div>
+
+<h2>Old Reddit</h2>
+<div class="commentarea" id="old">
+  <div class="sitetable nestedlisting">
+    <div class="thing comment noncollapsed" id="thing_t1_o1" data-fullname="t1_o1" data-author="alice" data-expect="keep">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">alice</a> <span class="score" title="12">12 points</span> 2h — normal</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p>Normal words here, several of them in fact.</p></div></div></form>
+      </div>
+    </div>
+
+    <div class="thing comment noncollapsed" id="thing_t1_o2" data-fullname="t1_o2" data-author="bob" data-expect="gif">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">bob</a> <span class="score" title="3">3 points</span> 2h — literal giphy markdown</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p>![gif](giphy|l0MYt5jPR6QX5pnqM)</p></div></div></form>
+      </div>
+      <div class="child"><div class="sitetable">
+        <div class="thing comment noncollapsed" id="thing_t1_o2c" data-fullname="t1_o2c" data-author="carol" data-expect="keep" data-child-of-collapsed="1">
+          <div class="entry">
+            <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">carol</a> 1h — reply</p>
+            <form class="usertext"><div class="usertext-body"><div class="md"><p>reply text with enough words to count</p></div></div></form>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="thing comment noncollapsed" id="thing_t1_o3" data-fullname="t1_o3" data-author="dave" data-expect="gif">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">dave</a> 2h — literal uploaded gif markdown, autolinked</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p>![gif](<a href="https://i.redd.it/xyz789.gif">https://i.redd.it/xyz789.gif</a>)</p></div></div></form>
+      </div>
+    </div>
+
+    <div class="thing comment noncollapsed" id="thing_t1_o4" data-fullname="t1_o4" data-author="erin" data-expect="gif">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">erin</a> 2h — bare link to a gif</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p><a href="https://media.giphy.com/media/abc/giphy.gif">https://media.giphy.com/media/abc/giphy.gif</a></p></div></div></form>
+      </div>
+    </div>
+
+    <div class="thing comment noncollapsed" id="thing_t1_o5" data-fullname="t1_o5" data-author="frank" data-expect="link">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">frank</a> 2h — bare link to an article</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p><a href="https://example.com/news/story">https://example.com/news/story</a></p></div></div></form>
+      </div>
+    </div>
+
+    <div class="thing comment noncollapsed" id="thing_t1_o6" data-fullname="t1_o6" data-author="grace" data-expect="keep">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">grace</a> 2h — gif markdown plus text</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p>Me right now, and probably for the rest of the week: ![gif](giphy|abc)</p></div></div></form>
+      </div>
+    </div>
+
+    <div class="thing comment noncollapsed" id="thing_t1_o7" data-fullname="t1_o7" data-author="kim" data-expect="phrase">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">kim</a> 2h — "^this"</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p><sup>this</sup></p></div></div></form>
+      </div>
+    </div>
+
+    <div class="thing comment noncollapsed" id="thing_t1_o8" data-fullname="t1_o8" data-author="RemindMeBot" data-expect="bot">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">RemindMeBot</a> 2h — bot account</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p>I will be messaging you in 2 days on 2026-09-14 13:19:41 UTC to remind you of this link.</p></div></div></form>
+      </div>
+    </div>
+
+    <div class="thing comment noncollapsed" id="thing_t1_o9" data-fullname="t1_o9" data-author="xan" data-expect="score">
+      <div class="entry">
+        <p class="tagline"><a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a> <a class="author">xan</a> <span class="score" title="-3">-3 points</span> 2h — score -3</p>
+        <form class="usertext"><div class="usertext-body"><div class="md"><p>An unpopular opinion with enough words to not be short.</p></div></div></form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Results</h2>
+<div id="results"></div>
+
+<script>
+  // Minimal stand-in for old Reddit's togglecomment()
+  function togglecomment(a) {
+    const thing = a.closest('.thing');
+    const collapsed = thing.classList.toggle('collapsed');
+    thing.classList.toggle('noncollapsed', !collapsed);
+    a.textContent = collapsed ? '[+]' : '[–]';
+    return false;
+  }
+</script>
+<script src="../src/content.js"></script>
+<script>
+  const SCENARIOS = {
+    'defaults': {},
+    'everything on': { rules: { image: true, quote: true, short: true, score: true }, shortWords: 3, scoreBelow: 0 },
+    'hide mode': { mode: 'hide' },
+    'keep replies': { keepReplies: true },
+    'muted spamlord': { mutedUsers: ['SpamLord'] },
+    'only gifs': { rules: { emote: false, phrase: false, link: false, bot: false, pasta: false } },
+  };
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const $ = (id) => document.getElementById(id);
+  const $scenario = $('scenario');
+  for (const name of Object.keys(SCENARIOS)) $scenario.add(new Option(name, name));
+
+  function isActed(el) {
+    const s = el.getAttribute('data-rgc');
+    return s === 'collapsed' || s === 'hidden';
+  }
+  function bodyOf(el) {
+    return el.tagName === 'SHREDDIT-COMMENT'
+      ? [...el.querySelectorAll('[slot="comment"]')].find((n) => n.closest('shreddit-comment') === el)
+      : el.querySelector(':scope > .entry .usertext-body');
+  }
+  const visible = (n) => !!n && n.getClientRects().length > 0;
+
+  async function runScenario(name) {
+    const rgc = window.__rgc;
+    rgc.settings = SCENARIOS[name];
+    const s = rgc.settings;
+    rgc.restoreAll();
+    rgc.scan();
+    await wait(300); // fallback collapse fires ~120ms after scan
+
+    const lines = [];
+    let pass = 0, fail = 0;
+    document.querySelectorAll('[data-expect]').forEach((el) => {
+      const expect = el.getAttribute('data-expect');
+      let shouldAct;
+      if (expect === 'keep') shouldAct = false;
+      else if (expect === 'native') shouldAct = s.mode === 'hide';
+      else if (expect === 'muted') shouldAct = s.mutedUsers.includes('spamlord');
+      else shouldAct = !!s.rules[expect];
+
+      const acted = isActed(el);
+      const kind = el.getAttribute('data-rgc-kind') || '-';
+      const problems = [];
+      if (acted !== shouldAct) problems.push(shouldAct ? 'should have acted' : 'should NOT have acted');
+      if (acted && expect !== 'native' && kind !== expect) problems.push(`kind=${kind}, expected ${expect}`);
+      if (acted && visible(bodyOf(el))) problems.push('body still visible');
+      if (el.hasAttribute('data-expect-fallback') && s.mode === 'collapse' && !s.keepReplies && acted && !el.classList.contains('rgc-collapsed')) problems.push('fallback not used');
+      if (el.hasAttribute('data-child-of-collapsed') && s.mode === 'collapse') {
+        const parentActed = isActed(el.parentElement.closest('shreddit-comment, .thing'));
+        const bodyVisible = visible(bodyOf(el));
+        if (parentActed && s.keepReplies && !bodyVisible) problems.push('reply hidden despite keepReplies');
+        if (parentActed && !s.keepReplies && bodyVisible) problems.push('reply visible without keepReplies');
+      }
+
+      const ok = problems.length === 0;
+      ok ? pass++ : fail++;
+      const who = (el.querySelector('[slot="commentMeta"], .tagline')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 64);
+      lines.push(`${ok ? 'PASS' : 'FAIL'}  expect=${expect.padEnd(6)} kind=${kind.padEnd(6)} state=${(el.getAttribute('data-rgc') || '-').padEnd(9)} ${who}${problems.length ? '  <-- ' + problems.join('; ') : ''}`);
+    });
+    const banner = document.querySelector('.rgc-banner');
+    const bannerText = banner ? banner.querySelector('.rgc-banner__text').textContent : '(no banner)';
+    return { name, pass, fail, lines, bannerText };
+  }
+
+  async function run() {
+    const r = await runScenario($scenario.value);
+    $('results').textContent = `[${r.name}] banner: ${r.bannerText}\n` + r.lines.join('\n');
+    $('summary').textContent = `${r.pass} pass, ${r.fail} fail`;
+    $('summary').className = r.fail ? 'fail' : '';
+    window.__fixture = r;
+  }
+
+  async function runAll() {
+    const all = [];
+    for (const name of Object.keys(SCENARIOS)) all.push(await runScenario(name));
+    const totalFail = all.reduce((n, r) => n + r.fail, 0);
+    $('results').textContent = all.map((r) => `[${r.name}] ${r.pass} pass, ${r.fail} fail — banner: ${r.bannerText}\n` + r.lines.filter((l) => l.startsWith('FAIL')).join('\n')).join('\n\n');
+    $('summary').textContent = `${all.length} scenarios, ${totalFail} failures`;
+    $('summary').className = totalFail ? 'fail' : '';
+    window.__fixtureAll = all;
+    // leave the page in the default scenario for eyeballing
+    await runScenario('defaults');
+  }
+
+  $('run').addEventListener('click', run);
+  $('runAll').addEventListener('click', runAll);
+  setTimeout(run, 100);
+</script>
+</body>
+</html>

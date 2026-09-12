@@ -1,0 +1,103 @@
+/* Not This. — styles injected on Reddit */
+
+.rgc-hidden {
+  display: none !important;
+}
+
+.rgc-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: #fff;
+  background: #ff4500;
+  cursor: default;
+  user-select: none;
+}
+
+/* Parts of a comment we hide when collapsing it ourselves (fallback, or "keep replies" mode) */
+.rgc-part-hidden {
+  display: none !important;
+}
+
+.rgc-badge--toggle {
+  cursor: pointer;
+}
+.rgc-badge--toggle:hover,
+.rgc-badge--toggle:focus-visible {
+  background: #d93a00;
+  outline: none;
+}
+
+/* "N low-effort comments hidden" banner */
+.rgc-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  margin: 8px 0 12px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 69, 0, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 69, 0, 0.10);
+  color: inherit;
+  font: 500 13px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  width: fit-content;
+  max-width: 100%;
+}
+.rgc-banner__text::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #ff4500;
+  vertical-align: middle;
+}
+.rgc-banner__btn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font: 600 12px/1.4 inherit;
+  color: #fff;
+  background: #ff4500;
+  cursor: pointer;
+}
+.rgc-banner__btn:hover,
+.rgc-banner__btn:focus-visible {
+  background: #d93a00;
+  outline: none;
+}
+.rgc-banner--floating {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483000;
+  margin: 0;
+  background: #fff3ee;
+  color: #1c1c1c;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+@media (prefers-color-scheme: dark) {
+  .rgc-banner--floating {
+    background: #2a1d17;
+    color: #e6e6e6;
+  }
+}
+
+.rgc-banner__total {
+  opacity: 0.75;
+  font-weight: 400;
+}
+.rgc-banner__total::before {
+  content: "·";
+  margin-right: 10px;
+}

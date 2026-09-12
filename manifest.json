@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "Not This.",
+  "version": "1.1.0",
+  "description": "Collapses low-effort Reddit comments (GIFs, \"This.\", lol, bare links, bots, copypasta) so you can read the actual discussion.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "*://www.reddit.com/*",
+    "*://old.reddit.com/*",
+    "*://new.reddit.com/*",
+    "*://sh.reddit.com/*",
+    "*://reddit.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.reddit.com/*",
+        "*://old.reddit.com/*",
+        "*://new.reddit.com/*",
+        "*://sh.reddit.com/*",
+        "*://reddit.com/*"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "css": [
+        "src/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "scripts": [
+      "src/background.js"
+    ]
+  },
+  "action": {
+    "default_title": "Not This.",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "notthis.racoon623@passmail.com",
+      "strict_min_version": "128.0"
+    }
+  }
+}
