@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 440px; height: 280px; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    background: #fff7f3;
+    color: #1c1c1c;
+    position: relative;
+  }
+  .glow {
+    position: absolute; right: -120px; top: -140px; width: 380px; height: 380px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,69,0,0.18) 0%, rgba(255,69,0,0) 65%);
+  }
+  .wrap { position: absolute; inset: 0; padding: 30px 32px; display: flex; flex-direction: column; justify-content: center; }
+  .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .brand img { width: 56px; height: 56px; border-radius: 13px; box-shadow: 0 6px 16px rgba(255,69,0,0.25); }
+  .brand h1 { font-size: 46px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+  .brand h1 span { color: #ff4500; }
+  .tag { font-size: 18px; line-height: 1.3; font-weight: 500; color: #2a2a2a; margin-bottom: 14px; }
+  .tag b { color: #ff4500; font-weight: 700; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    display: inline-block; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    letter-spacing: .05em; line-height: 20px; color: #fff; background: #ff4500; text-transform: uppercase;
+  }
+  .plus { color: #9a9a9a; font-weight: 600; font-size: 14px; }
+  .who { font-size: 14px; color: #6b6b6b; }
+  .foot { margin-top: 14px; font-size: 13px; color: #7a7a7a; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="wrap">
+    <div class="brand">
+      <img src="../icons/icon128.png" alt="">
+      <h1>Not <span>This.</span></h1>
+    </div>
+    <div class="tag">Collapses low-effort Reddit comments so you can read the <b>actual discussion</b>.</div>
+    <div class="row" style="margin-bottom:6px; white-space:nowrap; font-size:13px">
+      <span class="plus">[+]</span><span class="who">u/reaction_guy</span><span class="badge">GIF</span>
+      <span class="plus" style="margin-left:12px">[+]</span><span class="who">u/AutoModerator</span><span class="badge">Bot</span>
+    </div>
+    <div class="row" style="white-space:nowrap; font-size:13px">
+      <span class="plus">[+]</span><span class="who">u/agreeable_al</span><span class="badge">Low effort</span>
+      <span class="plus" style="margin-left:12px">[+]</span><span class="who">u/link_dropper</span><span class="badge">Link</span>
+    </div>
+    <div class="foot">Free · Open source · No tracking</div>
+  </div>
+</body>
+</html>
