@@ -49,13 +49,11 @@ Things it will never do:
 
 ## Install
 
-**From the stores** (links added as each listing goes live):
+**From the stores:**
 
-- Chrome Web Store: coming soon
+- Chrome, Brave, Edge: [Chrome Web Store](https://chromewebstore.google.com/detail/not-this/dafiegfbpcopimapifpcnfoklcajldjc)
 - Firefox Add-ons: coming soon
-- Microsoft Edge Add-ons: coming soon
-
-Brave installs from the Chrome Web Store.
+- Microsoft Edge Add-ons: coming soon (Edge can install from the Chrome Web Store in the meantime)
 
 **From source**, for developers or the impatient:
 
