@@ -28,7 +28,9 @@
 
   // A reply counts as part of a chain when it's low-effort or at most this many words.
   const CHAIN_WORDS = 12;
-  const MAX_PATTERN_CHARS = 4000;
+
+  // From src/patterns.js, which the manifest loads first.
+  const { normalizeText, compilePatterns, firstMatch } = globalThis.NotThisPatterns;
 
   const DEFAULTS = {
     enabled: true,
@@ -62,47 +64,6 @@
       .filter(Boolean);
   }
 
-  const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-  // A plain line, compared to the normalized comment (no case or punctuation).
-  // `*` stands for "anything", matched on whole words: "rock and stone*" starts
-  // with it, "*my axe*" mentions it anywhere, and neither matches "taxes".
-  function wildcardTest(line) {
-    const parts = line.split('*').map(normalizeText);
-    if (!parts.some(Boolean)) return null;
-    if (parts.length === 1) return (_raw, norm) => norm === parts[0];
-    const words = parts.filter(Boolean).map(escapeRe);
-    const lead = parts[0] === '' ? '(?:.*\\b)?' : '';
-    const trail = parts[parts.length - 1] === '' ? '(?:\\b.*)?' : '';
-    const re = new RegExp(`^${lead}${words.join('\\b.*\\b')}${trail}$`);
-    return (_raw, norm) => re.test(norm);
-  }
-
-  // Each line of the user's pattern list becomes a test on a comment's text.
-  // Plain lines use wildcardTest(); "/.../flags" is a regex for power users,
-  // tested against the text as shown and always case-insensitive.
-  function compilePatterns(text) {
-    const tests = [];
-    String(text || '').slice(0, MAX_PATTERN_CHARS).split(/\r?\n/).forEach((line) => {
-      const t = line.trim();
-      if (!t || t.startsWith('#')) return;
-      const m = t.match(/^\/(.+)\/([a-z]*)$/);
-      if (m) {
-        try {
-          const flags = [...new Set(`i${m[2]}`.replace(/[gy]/g, ''))].join('');
-          const re = new RegExp(m[1], flags);
-          tests.push((raw) => re.test(raw));
-        } catch {
-          /* invalid regex; the popup points it out */
-        }
-        return;
-      }
-      const test = wildcardTest(t);
-      if (test) tests.push(test);
-    });
-    return tests;
-  }
-
   function normalizeSettings(raw) {
     const r = raw || {};
     const s = { ...DEFAULTS, ...r };
@@ -116,7 +77,7 @@
     s.mutedUsers = userList(s.mutedUsers);
     s.allowedUsers = userList(s.allowedUsers);
     s.customPatterns = typeof s.customPatterns === 'string' ? s.customPatterns : '';
-    s.customTests = compilePatterns(s.customPatterns);
+    s.customTests = compilePatterns(s.customPatterns).tests;
     return s;
   }
 
@@ -211,15 +172,6 @@
 
   const BOT_AUTHOR = /^automoderator$|bot$|_bot\d*$|-bot\d*$|^remindmebot$|^savevideo$|^vredditdownloader$|^stabbot$|^sneakpeekbot$|^wikisummarizerbot$|^haikusbot$/i;
   const BOT_TEXT = /\bi am a bot\b|\bthis action was performed automatically\b|\bbeep boop\b|\bbleep bloop\b|^\s*!?remindme!/i;
-
-  function normalizeText(t) {
-    return t
-      .toLowerCase()
-      .replace(/[’'"“”`]/g, '')
-      .replace(/[^\p{L}\p{N}\s/+%]/gu, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
 
   function mediaKind(el, original) {
     const tag = el.tagName.toLowerCase();
@@ -531,10 +483,7 @@
 
   function matchesCustom(body) {
     if (!settings.customTests.length) return false;
-    const raw = body.textContent.replace(/\s+/g, ' ').trim();
-    if (!raw) return false;
-    const norm = normalizeText(raw);
-    return settings.customTests.some((t) => t(raw, norm));
+    return firstMatch(settings.customTests, body.textContent) !== null;
   }
 
   function decide(el, body) {

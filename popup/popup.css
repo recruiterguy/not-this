@@ -97,6 +97,27 @@ textarea {
 .examples li { display: flex; gap: 6px; align-items: baseline; padding: 1px 0; }
 .examples code { flex: 0 0 104px; }
 .advanced { opacity: 0.75; }
+
+.tester { display: block; margin-top: 8px; }
+.tester span { display: block; font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+.tester input {
+  width: 100%;
+  padding: 5px 8px;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.result {
+  margin: 4px 0 0;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+.result.hit { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.result code { font-size: 11px; }
 .hint.error { color: #c62828; }
 @media (prefers-color-scheme: dark) { .hint.error { color: #ff8a80; } }
 

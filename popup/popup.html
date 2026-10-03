@@ -45,6 +45,11 @@
       </ul>
       <p class="hint">Capitals and punctuation don't matter. <span class="advanced">Advanced: <code>/like this/</code> is a regex.</span></p>
       <p id="patternErrors" class="hint error" hidden></p>
+      <label class="tester">
+        <span>Test a comment</span>
+        <input type="text" id="patternTest" spellcheck="false" placeholder="Type or paste a comment to try your patterns">
+      </label>
+      <p id="patternResult" class="result" hidden></p>
     </fieldset>
 
     <fieldset id="modeGroup">
@@ -77,6 +82,7 @@
     <span>Changes apply instantly. Reload if a page looks stale.</span>
   </footer>
 
+  <script src="../src/patterns.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -23,6 +23,7 @@
         "*://reddit.com/*"
       ],
       "js": [
+        "src/patterns.js",
         "src/content.js"
       ],
       "css": [

@@ -44,7 +44,8 @@ Plus:
   | `rock and stone*` | start with it |
   | `*and my axe*` | mention it anywhere |
 
-  For power users, a line wrapped in slashes is a regex, tested against the comment as shown
+  A *Test a comment* box under the list shows which line, if any, would collapse whatever you
+  type into it. For power users, a line wrapped in slashes is a regex, tested against the comment as shown
   and always case-insensitive (`/^ack+chy?ually/`). Lines starting with `#` are ignored.
 - **Always show.** Usernames that are never collapsed, whatever they post. Handy for a bot you
   actually like reading.
@@ -115,6 +116,7 @@ attribute) use the extension's own collapse instead, with the badge as a show/hi
 
 ```
 manifest.json         MV3 manifest (Chrome, Brave, Edge, Firefox)
+src/patterns.js       text matching shared with the popup (custom patterns, normalizing)
 src/content.js        detection, collapsing, on-page counter
 src/content.css       badge, banner, and hidden-mode styles
 src/background.js     toolbar badge count and the all-time tally

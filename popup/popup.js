@@ -16,8 +16,8 @@ const LABELS = {
   bot: 'bot', pasta: 'copypasta', quote: 'quote-only', short: 'short', score: 'downvoted',
   muted: 'muted', custom: 'custom pattern', chain: 'reply chain',
 };
-// chrome.storage.sync allows 8 KB per item.
-const MAX_PATTERN_CHARS = 4000;
+// From src/patterns.js, the same matching the content script uses.
+const { MAX_PATTERN_CHARS, compilePatterns, firstMatch } = globalThis.NotThisPatterns;
 
 const $ = (id) => document.getElementById(id);
 const $enabled = $('enabled');
@@ -33,6 +33,8 @@ const $allowedUsers = $('allowedUsers');
 const $chainLength = $('chainLength');
 const $customPatterns = $('customPatterns');
 const $patternErrors = $('patternErrors');
+const $patternTest = $('patternTest');
+const $patternResult = $('patternResult');
 const $status = $('status');
 
 function normalize(raw) {
@@ -54,29 +56,34 @@ function parseUsers(text) {
   return [...new Set(list.map((u) => u.toLowerCase()))];
 }
 
-// Same parsing as compilePatterns() in content.js, but reports the bad lines.
-function patternErrors(text) {
-  const bad = [];
-  text.split(/\r?\n/).forEach((line, i) => {
-    const m = line.trim().match(/^\/(.+)\/([a-z]*)$/);
-    if (!m) return;
-    try {
-      new RegExp(m[1], [...new Set(`i${m[2]}`.replace(/[gy]/g, ''))].join(''));
-    } catch {
-      bad.push(i + 1);
-    }
-  });
-  return bad;
-}
-
 function renderPatternErrors() {
-  const bad = patternErrors($customPatterns.value);
+  const bad = compilePatterns($customPatterns.value).errors;
   const long = $customPatterns.value.length > MAX_PATTERN_CHARS;
   const msgs = [];
   if (bad.length) msgs.push(`Line${bad.length > 1 ? 's' : ''} ${bad.join(', ')}: not a valid regex, so ${bad.length > 1 ? 'they are' : 'it is'} skipped.`);
   if (long) msgs.push(`Only the first ${MAX_PATTERN_CHARS.toLocaleString()} characters are saved.`);
   $patternErrors.textContent = msgs.join(' ');
   $patternErrors.hidden = msgs.length === 0;
+}
+
+// "Test a comment": says which of your lines, if any, would collapse it.
+function renderPatternTest() {
+  const text = $patternTest.value.trim();
+  $patternResult.textContent = '';
+  $patternResult.hidden = text === '';
+  if (!text) return;
+  const { tests } = compilePatterns($customPatterns.value);
+  const hit = firstMatch(tests, text);
+  $patternResult.classList.toggle('hit', !!hit);
+  if (!tests.length) {
+    $patternResult.textContent = 'Add a pattern above, then try a comment here.';
+  } else if (hit) {
+    const code = document.createElement('code');
+    code.textContent = hit.text;
+    $patternResult.append(`Collapsed by line ${hit.line}: `, code);
+  } else {
+    $patternResult.textContent = 'Not caught by your patterns.';
+  }
 }
 
 let current = normalize({});
@@ -95,6 +102,7 @@ function render(s) {
   $chainLength.value = s.chainLength;
   $customPatterns.value = s.customPatterns;
   renderPatternErrors();
+  renderPatternTest();
 }
 
 async function load() {
@@ -177,7 +185,11 @@ function onTyping(el, makePatch) {
 onTyping($mutedUsers, () => ({ mutedUsers: parseUsers($mutedUsers.value) }));
 onTyping($allowedUsers, () => ({ allowedUsers: parseUsers($allowedUsers.value) }));
 onTyping($customPatterns, () => ({ customPatterns: $customPatterns.value.slice(0, MAX_PATTERN_CHARS) }));
-$customPatterns.addEventListener('input', renderPatternErrors);
+$customPatterns.addEventListener('input', () => {
+  renderPatternErrors();
+  renderPatternTest();
+});
+$patternTest.addEventListener('input', renderPatternTest);
 
 // ---- Per-page stats ---------------------------------------------------------
 
