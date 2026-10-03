@@ -198,24 +198,28 @@
     <div slot="comment"><div class="md"><p>The taxes on this are going to be wild, honestly.</p></div></div>
   </shreddit-comment>
 
-  <!-- A pun chain hanging off a real comment: the first pun collapses and takes the rest with it -->
+  <!-- A pun chain hanging off a real comment: the first pun stays, the rest fold from the second -->
   <shreddit-comment thingid="t1_ch0" author="abe" depth="0" data-expect="keep">
     <div slot="commentMeta">abe · 2h — real comment above a pun chain</div>
     <div slot="comment"><div class="md"><p>The new stairs in the lobby took them almost two years to finish, which seems like a lot.</p></div></div>
     <div id="comment-children">
-      <shreddit-comment thingid="t1_ch1" author="bea" depth="1" data-expect="chain">
-        <div slot="commentMeta">bea · 1h — pun 1 (chain root)</div>
-        <div slot="comment"><div class="md"><p>Well, it was a step up from the old ones.</p></div></div>
+      <shreddit-comment thingid="t1_ch1" author="bea" depth="1" data-expect="keep" data-stay-visible="1">
+        <div slot="commentMeta">bea · 1h — pun 1 (the setup, stays open)</div>
+        <div slot="comment"><div class="md"><p>Well, it was a step up.</p></div></div>
         <div id="comment-children">
-          <shreddit-comment thingid="t1_ch2" author="cal" depth="2" data-expect="keep" data-chain-member="1">
-            <div slot="commentMeta">cal · 1h — pun 2</div>
-            <div slot="comment"><div class="md"><p>I can't stand the stairs, they're always up to something.</p></div></div>
+          <shreddit-comment thingid="t1_ch2" author="cal" depth="2" data-expect="chain">
+            <div slot="commentMeta">cal · 1h — pun 2 (chain collapses here)</div>
+            <div slot="comment"><div class="md"><p>Stairs are always up to something.</p></div></div>
             <div id="comment-children">
               <shreddit-comment thingid="t1_ch3" author="dee" depth="3" data-expect="keep" data-chain-member="1">
                 <div slot="commentMeta">dee · 1h — pun 3</div>
                 <div slot="comment"><div class="md"><p>Let's not take this to the next level.</p></div></div>
               </shreddit-comment>
             </div>
+          </shreddit-comment>
+          <shreddit-comment thingid="t1_ch1b" author="fin" depth="2" data-expect="keep" data-stay-visible="1">
+            <div slot="commentMeta">fin · 1h — real reply to the setup, must stay open</div>
+            <div slot="comment"><div class="md"><p>Honestly the old stairs were a safety hazard, so two years seems fine to me.</p></div></div>
           </shreddit-comment>
         </div>
       </shreddit-comment>
@@ -228,6 +232,29 @@
             <div slot="comment"><div class="md"><p>Permits, mostly. The city was slow.</p></div></div>
           </shreddit-comment>
         </div>
+      </shreddit-comment>
+    </div>
+  </shreddit-comment>
+
+  <!-- The r/TheoryOfReddit thread that tripped v1.2.0: a 12-word request, two short replies,
+       and a real suggestion beside them. Nothing here should collapse as a chain. -->
+  <shreddit-comment thingid="t1_cy0" author="cybersaurus" depth="0" data-expect="keep" data-stay-visible="1">
+    <div slot="commentMeta">cybersaurus · 18d — 12-word request (not a chain link)</div>
+    <div slot="comment"><div class="md"><p>Can you eliminate pun threads and also 'and my sword' threads too?</p></div></div>
+    <div id="comment-children">
+      <shreddit-comment thingid="t1_cy1" author="fuuuuuckendoobs" depth="1" data-expect="keep" data-stay-visible="1">
+        <div slot="commentMeta">fuuuuuckendoobs · 18d — short request</div>
+        <div slot="comment"><div class="md"><p>Please add "Sir, this is a Wendy's"</p></div></div>
+        <div id="comment-children">
+          <shreddit-comment thingid="t1_cy2" author="recruiterguy" depth="2" data-expect="keep" data-stay-visible="1">
+            <div slot="commentMeta">recruiterguy · 18d — short answer</div>
+            <div slot="comment"><div class="md"><p>lol - added to the list.</p></div></div>
+          </shreddit-comment>
+        </div>
+      </shreddit-comment>
+      <shreddit-comment thingid="t1_cy3" author="854490" depth="1" data-expect="keep" data-stay-visible="1">
+        <div slot="commentMeta">854490 · 18d — real suggestion beside the short replies</div>
+        <div slot="comment"><div class="md"><p>If you're planning to make any major updates later, consider taking user input of a newline separated list of either plain strings or regexes.</p></div></div>
       </shreddit-comment>
     </div>
   </shreddit-comment>
@@ -454,11 +481,12 @@
         if (parentActed && !s.keepReplies && bodyVisible) problems.push('reply visible without keepReplies');
       }
       if (el.hasAttribute('data-chain-member') && s.mode === 'collapse') {
-        const root = document.querySelector('[thingid="t1_ch1"]');
+        const root = document.querySelector('[thingid="t1_ch2"]');
         const chained = root.getAttribute('data-rgc-kind') === 'chain' && isActed(root);
         // Chains fold their replies away even with keepReplies on.
         if (chained && visible(bodyOf(el))) problems.push('chain reply still visible');
       }
+      if (el.hasAttribute('data-stay-visible') && !visible(bodyOf(el))) problems.push('hidden, but should stay visible');
 
       const ok = problems.length === 0;
       ok ? pass++ : fail++;

@@ -31,7 +31,7 @@ Every rule has its own switch in the popup.
 | Quote-only | Quotes the parent and adds nothing |
 | Short | Fewer than N words (you pick N) |
 | Downvoted | Score below N (you pick N) |
-| Reply chain | N or more short replies in a row, each answering the last: pun threads, "and my axe", song lyrics a line at a time. The first one collapses and takes the rest with it. |
+| Reply chain | N or more short replies (8 words or fewer) in a row, each answering the last: pun threads, "and my axe", song lyrics a line at a time. The first one stays open, since it's the setup and may have real replies; the chain folds from the second. |
 
 Plus:
 
@@ -97,8 +97,11 @@ The code is not minified. You can read every line in [`src/`](src/) and [`popup/
 Reddit loads comments lazily and navigates as a single-page app. Each comment is checked
 against the rules in order (muted user, always-show user, your patterns, bot, score, then the
 body-based rules) and gets at most one kind. With the reply-chain rule on, each comment also
-walks up through its short ancestors; if the run is long enough, the top of it collapses.
-Walking up from the newest reply means chains still get caught when their replies load late. For the body rules it strips media, then looks at what text remains: nothing
+walks up through its short ancestors; if the run is long enough, the chain collapses from its
+second link. Walking up from the newest reply means chains still get caught when their replies
+load late.
+
+For the body rules it strips media, then looks at what text remains: nothing
 (GIF, image, emoji), only links, only a blockquote, a stock phrase, a copypasta opener, or too
 few words.
 

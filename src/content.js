@@ -27,7 +27,8 @@
   };
 
   // A reply counts as part of a chain when it's low-effort or at most this many words.
-  const CHAIN_WORDS = 12;
+  // Kept low on purpose: a short question or request is still real discussion.
+  const CHAIN_WORDS = 8;
 
   // From src/patterns.js, which the manifest loads first.
   const { normalizeText, compilePatterns, firstMatch } = globalThis.NotThisPatterns;
@@ -526,8 +527,10 @@
   // ---------------------------------------------------------------------------
   // Reply chains: pun threads, "and my axe", song lyrics a line at a time.
   // Each comment walks up through its short ancestors; if that run is long
-  // enough, the top of it is collapsed along with everything under it. Walking
-  // up from each new comment also catches chains whose replies load later.
+  // enough, it collapses from the second link down. The first link stays open:
+  // it's the setup (a question, a request, the original joke), and its other
+  // replies may be real discussion. Walking up from each new comment also
+  // catches chains whose replies load later.
   // ---------------------------------------------------------------------------
 
   let classCache = new WeakMap();
@@ -554,21 +557,18 @@
   }
 
   function collapseChainEndingAt(el) {
-    let run = 0;
-    let root = null;
-    for (let node = el; node && isChainLink(node); node = parentComment(node)) {
-      run += 1;
-      root = node;
-    }
-    if (run < settings.chainLength) return;
+    const links = [];
+    for (let node = el; node && isChainLink(node); node = parentComment(node)) links.push(node);
+    if (links.length < settings.chainLength) return;
+    const target = links[links.length - 2]; // the reply to the setup, on this path
     // Already collapsed, hidden, or collapsed by Reddit or the user before we got there.
-    if (root.getAttribute(ATTR) !== 'skip' || root.hasAttribute(NATIVE_ATTR)) return;
+    if (target.getAttribute(ATTR) !== 'skip' || target.hasAttribute(NATIVE_ATTR)) return;
     // Something further up may already be folding the whole chain away.
-    for (let up = parentComment(root); up; up = parentComment(up)) {
+    for (let up = parentComment(target); up; up = parentComment(up)) {
       const st = up.getAttribute(ATTR);
       if ((st === 'collapsed' || st === 'hidden') && !keepsReplies(up)) return;
     }
-    apply(root, 'chain');
+    apply(target, 'chain');
   }
 
   // Set when the user clicks "Show them" on the banner.
