@@ -37,8 +37,13 @@
 
     <fieldset>
       <legend>Your own patterns <small>(one per line)</small></legend>
-      <textarea id="customPatterns" rows="3" spellcheck="false" placeholder="for the emperor&#10;/^rock and stone/"></textarea>
-      <p class="hint">Plain text matches the whole comment, ignoring case and punctuation. Wrap a line in slashes for a regex: <code>/^rock and stone/</code>.</p>
+      <textarea id="customPatterns" rows="3" spellcheck="false" placeholder="for the emperor&#10;rock and stone*&#10;*and my axe*"></textarea>
+      <ul class="hint examples">
+        <li><code>for the emperor</code> the whole comment is just that</li>
+        <li><code>rock and stone*</code> the comment starts with it</li>
+        <li><code>*and my axe*</code> the comment mentions it anywhere</li>
+      </ul>
+      <p class="hint">Capitals and punctuation don't matter. <span class="advanced">Advanced: <code>/like this/</code> is a regex.</span></p>
       <p id="patternErrors" class="hint error" hidden></p>
     </fieldset>
 

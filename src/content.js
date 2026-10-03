@@ -62,9 +62,25 @@
       .filter(Boolean);
   }
 
+  const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // A plain line, compared to the normalized comment (no case or punctuation).
+  // `*` stands for "anything", matched on whole words: "rock and stone*" starts
+  // with it, "*my axe*" mentions it anywhere, and neither matches "taxes".
+  function wildcardTest(line) {
+    const parts = line.split('*').map(normalizeText);
+    if (!parts.some(Boolean)) return null;
+    if (parts.length === 1) return (_raw, norm) => norm === parts[0];
+    const words = parts.filter(Boolean).map(escapeRe);
+    const lead = parts[0] === '' ? '(?:.*\\b)?' : '';
+    const trail = parts[parts.length - 1] === '' ? '(?:\\b.*)?' : '';
+    const re = new RegExp(`^${lead}${words.join('\\b.*\\b')}${trail}$`);
+    return (_raw, norm) => re.test(norm);
+  }
+
   // Each line of the user's pattern list becomes a test on a comment's text.
-  // "/.../flags" is a regex against the text as shown (always case-insensitive);
-  // anything else must match the whole comment, ignoring case and punctuation.
+  // Plain lines use wildcardTest(); "/.../flags" is a regex for power users,
+  // tested against the text as shown and always case-insensitive.
   function compilePatterns(text) {
     const tests = [];
     String(text || '').slice(0, MAX_PATTERN_CHARS).split(/\r?\n/).forEach((line) => {
@@ -81,8 +97,8 @@
         }
         return;
       }
-      const n = normalizeText(t);
-      if (n) tests.push((_raw, norm) => norm === n);
+      const test = wildcardTest(t);
+      if (test) tests.push(test);
     });
     return tests;
   }

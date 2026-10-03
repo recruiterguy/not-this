@@ -31,7 +31,7 @@ Off by default, because they take judgment: image-only comments, replies that ju
 
 MAKE IT YOURS
 
-• Your own patterns: add phrases, one per line, or wrap a line in slashes to use a regex
+• Your own patterns: add phrases, one per line. "rock and stone*" catches comments that start with it, "*and my axe*" catches any that mention it
 • Always show: usernames that are never collapsed, like a summary bot you actually want to read
 • Mute list: usernames you're done reading
 

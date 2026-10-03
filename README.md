@@ -35,10 +35,17 @@ Every rule has its own switch in the popup.
 
 Plus:
 
-- **Your own patterns.** One per line. Plain text matches the whole comment, ignoring case and
-  punctuation (`for the emperor`). Wrap a line in slashes for a regex, which is matched against
-  the comment as shown and is always case-insensitive (`/^rock and stone/`). Lines starting with
-  `#` are ignored.
+- **Your own patterns.** One per line, with `*` meaning "anything here". Capitals and
+  punctuation don't matter, and matching is by whole words (`*axe*` doesn't catch "taxes").
+
+  | You type | It collapses comments that… |
+  |---|---|
+  | `for the emperor` | are just that |
+  | `rock and stone*` | start with it |
+  | `*and my axe*` | mention it anywhere |
+
+  For power users, a line wrapped in slashes is a regex, tested against the comment as shown
+  and always case-insensitive (`/^ack+chy?ually/`). Lines starting with `#` are ignored.
 - **Always show.** Usernames that are never collapsed, whatever they post. Handy for a bot you
   actually like reading.
 - **Muted users.** A list of usernames whose comments are always collapsed.

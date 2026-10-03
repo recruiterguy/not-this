@@ -92,7 +92,11 @@ textarea {
 }
 
 .hint { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
-.hint code { font-size: 11px; }
+.hint code { font-size: 11px; color: var(--fg); }
+.examples { list-style: none; padding: 0; }
+.examples li { display: flex; gap: 6px; align-items: baseline; padding: 1px 0; }
+.examples code { flex: 0 0 104px; }
+.advanced { opacity: 0.75; }
 .hint.error { color: #c62828; }
 @media (prefers-color-scheme: dark) { .hint.error { color: #ff8a80; } }
 

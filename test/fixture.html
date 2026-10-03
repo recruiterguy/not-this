@@ -193,6 +193,11 @@
     <div slot="comment"><div class="md"><p>For the Emperor, brothers!!</p></div></div>
   </shreddit-comment>
 
+  <shreddit-comment thingid="t1_cu3" author="ada" depth="0" data-expect="keep">
+    <div slot="commentMeta">ada · 2h — contains "taxes", must not match the *axe* pattern</div>
+    <div slot="comment"><div class="md"><p>The taxes on this are going to be wild, honestly.</p></div></div>
+  </shreddit-comment>
+
   <!-- A pun chain hanging off a real comment: the first pun collapses and takes the rest with it -->
   <shreddit-comment thingid="t1_ch0" author="abe" depth="0" data-expect="keep">
     <div slot="commentMeta">abe · 2h — real comment above a pun chain</div>
@@ -388,7 +393,8 @@
     'muted spamlord': { mutedUsers: ['SpamLord'] },
     'only gifs': { rules: { emote: false, phrase: false, link: false, bot: false, pasta: false } },
     'always show bots': { allowedUsers: ['u/AutoModerator', 'helpful_user', 'RemindMeBot'] },
-    'custom patterns': { customPatterns: '/^ack+chy?ually/\n# a comment line\nFor the emperor brothers\n/[unclosed/' },
+    'custom patterns': { customPatterns: '*ackchyually*\n# a comment line\nfor the emperor*\n*axe*\n/[unclosed/' },
+    'custom exact + regex': { customPatterns: 'For the emperor, brothers\n/^ack+chy?ually/' },
     'chains': { rules: { chain: true } },
     'chains + keep replies': { rules: { chain: true }, keepReplies: true },
     'chains, length 4': { rules: { chain: true }, chainLength: 4 },
