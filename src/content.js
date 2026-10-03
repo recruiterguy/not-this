@@ -23,7 +23,12 @@
     quote: false,  // quotes the parent and adds nothing
     short: false,  // fewer than `shortWords` words
     score: false,  // score below `scoreBelow`
+    chain: false,  // a run of `chainLength`+ short replies, each replying to the last
   };
+
+  // A reply counts as part of a chain when it's low-effort or at most this many words.
+  const CHAIN_WORDS = 12;
+  const MAX_PATTERN_CHARS = 4000;
 
   const DEFAULTS = {
     enabled: true,
@@ -33,19 +38,54 @@
     rules: RULE_DEFAULTS,
     shortWords: 3,
     scoreBelow: 0,
+    chainLength: 3,
     mutedUsers: [],
+    allowedUsers: [],      // never collapsed, whatever they post
+    customPatterns: '',    // one per line: plain text, or /regex/flags
   };
 
   // Human labels for the banner/popup, and the short badge shown on the comment.
   const LABELS = {
     gif: 'GIF', image: 'image', emote: 'emoji', phrase: '"this"', link: 'link-only',
     bot: 'bot', pasta: 'copypasta', quote: 'quote-only', short: 'short', score: 'downvoted',
-    muted: 'muted',
+    muted: 'muted', custom: 'custom pattern', chain: 'reply chain',
   };
   const BADGES = {
     gif: 'GIF', image: 'IMG', emote: 'EMOJI', phrase: 'LOW EFFORT', link: 'LINK', bot: 'BOT',
     pasta: 'PASTA', quote: 'QUOTE', short: 'SHORT', score: 'DOWNVOTED', muted: 'MUTED',
+    custom: 'CUSTOM', chain: 'CHAIN',
   };
+
+  function userList(list) {
+    return (Array.isArray(list) ? list : [])
+      .map((u) => String(u).trim().replace(/^\/?u\//i, '').toLowerCase())
+      .filter(Boolean);
+  }
+
+  // Each line of the user's pattern list becomes a test on a comment's text.
+  // "/.../flags" is a regex against the text as shown (always case-insensitive);
+  // anything else must match the whole comment, ignoring case and punctuation.
+  function compilePatterns(text) {
+    const tests = [];
+    String(text || '').slice(0, MAX_PATTERN_CHARS).split(/\r?\n/).forEach((line) => {
+      const t = line.trim();
+      if (!t || t.startsWith('#')) return;
+      const m = t.match(/^\/(.+)\/([a-z]*)$/);
+      if (m) {
+        try {
+          const flags = [...new Set(`i${m[2]}`.replace(/[gy]/g, ''))].join('');
+          const re = new RegExp(m[1], flags);
+          tests.push((raw) => re.test(raw));
+        } catch {
+          /* invalid regex; the popup points it out */
+        }
+        return;
+      }
+      const n = normalizeText(t);
+      if (n) tests.push((_raw, norm) => norm === n);
+    });
+    return tests;
+  }
 
   function normalizeSettings(raw) {
     const r = raw || {};
@@ -56,14 +96,17 @@
     s.mode = s.mode === 'hide' ? 'hide' : 'collapse';
     s.shortWords = Math.min(20, Math.max(1, parseInt(s.shortWords, 10) || DEFAULTS.shortWords));
     s.scoreBelow = Number.isFinite(Number(s.scoreBelow)) ? Number(s.scoreBelow) : DEFAULTS.scoreBelow;
-    s.mutedUsers = (Array.isArray(s.mutedUsers) ? s.mutedUsers : [])
-      .map((u) => String(u).trim().replace(/^\/?u\//i, '').toLowerCase())
-      .filter(Boolean);
+    s.chainLength = Math.min(10, Math.max(3, parseInt(s.chainLength, 10) || DEFAULTS.chainLength));
+    s.mutedUsers = userList(s.mutedUsers);
+    s.allowedUsers = userList(s.allowedUsers);
+    s.customPatterns = typeof s.customPatterns === 'string' ? s.customPatterns : '';
+    s.customTests = compilePatterns(s.customPatterns);
     return s;
   }
 
   const ATTR = 'data-rgc';             // 'collapsed' | 'hidden' | 'skip'
   const KIND_ATTR = 'data-rgc-kind';   // detected kind, even when skipped
+  const NATIVE_ATTR = 'data-rgc-native'; // matched, but Reddit or the user had already collapsed it
   const BADGE_CLASS = 'rgc-badge';
   const HIDDEN_CLASS = 'rgc-hidden';
   const OWN_CLASS = 'rgc-collapsed';        // collapsed by us, not by Reddit
@@ -103,6 +146,9 @@
     'username checks out', 'whoosh', 'woosh', 'thanks i hate it', 'thanks i hate this',
     'nice', 'noice', 'based', 'cringe', 'cope', 'seethe', 'ratio', 'l', 'w', 'skill issue',
     'first', 'sir this is a wendys', 'this is a wendys', 'ok boomer', 'k', 'and my axe',
+    'and my sword', 'and my bow', 'you have my sword', 'and you have my sword', 'and my bow and my axe',
+    'rock and stone', 'rock and stone brother', 'rock and stone to the bone', 'did i hear a rock and stone',
+    'for karl', 'for carl', 'for rock and stone',
     'i understand that reference', 'wholesome', 'bruh', 'facts', 'fax', 'big facts', 'truth',
     'true', 'exactly', '+1', 'agreed', 'agree', 'correct', 'yep', 'yup', 'this 100%', '100%',
     '1000%', 'im in this picture and i dont like it', 'thats the joke', 'delete this', 'no u',
@@ -338,10 +384,15 @@
     }
   }
 
+  // A chain is mostly its replies, so "keep replies visible" doesn't apply to it.
+  function keepsReplies(el) {
+    return settings.keepReplies && el.getAttribute(KIND_ATTR) !== 'chain';
+  }
+
   function setOwnCollapsed(el, collapsed) {
     el.classList.toggle(OWN_CLASS, collapsed);
     if (collapsed) {
-      ownParts(el, settings.keepReplies).forEach((p) => p.classList.add(PART_CLASS));
+      ownParts(el, keepsReplies(el)).forEach((p) => p.classList.add(PART_CLASS));
     } else {
       // Remove from every part we might have touched, regardless of current keepReplies.
       ownParts(el, false).forEach((p) => p.classList.remove(PART_CLASS));
@@ -405,6 +456,7 @@
     if (isNativelyCollapsed(el)) {
       // Already collapsed by Reddit or the user; leave it alone.
       el.setAttribute(ATTR, 'skip');
+      el.setAttribute(NATIVE_ATTR, '');
       return;
     }
 
@@ -412,7 +464,7 @@
     addBadge(el, kind);
     tally(el);
 
-    if (settings.keepReplies) {
+    if (keepsReplies(el)) {
       // Reddit's own collapse always takes the replies with it, so do it ourselves.
       setOwnCollapsed(el, true);
       return;
@@ -444,6 +496,7 @@
     removeBadge(el);
     el.removeAttribute(ATTR);
     el.removeAttribute(KIND_ATTR);
+    el.removeAttribute(NATIVE_ATTR);
   }
 
   function restoreAll() {
@@ -455,18 +508,33 @@
   // Deciding
   // ---------------------------------------------------------------------------
 
+  function isAllowed(el) {
+    const author = authorOf(el).toLowerCase();
+    return !!author && settings.allowedUsers.includes(author);
+  }
+
+  function matchesCustom(body) {
+    if (!settings.customTests.length) return false;
+    const raw = body.textContent.replace(/\s+/g, ' ').trim();
+    if (!raw) return false;
+    const norm = normalizeText(raw);
+    return settings.customTests.some((t) => t(raw, norm));
+  }
+
   function decide(el, body) {
     const rules = settings.rules;
     const author = authorOf(el);
 
     if (author && settings.mutedUsers.includes(author.toLowerCase())) return 'muted';
+    if (isAllowed(el)) return null;
+    if (matchesCustom(body)) return 'custom';
     if (rules.bot && isBot(author, body)) return 'bot';
     if (rules.score) {
       const score = scoreOf(el);
       if (score !== null && score < settings.scoreBelow) return 'score';
     }
 
-    const { kind, words } = classifyBody(body);
+    const { kind, words } = classified(el, body);
     if (kind) return rules[kind] ? kind : null;
     if (rules.short && words > 0 && words < settings.shortWords) return 'short';
     return null;
@@ -487,6 +555,55 @@
     } else {
       el.setAttribute(ATTR, 'skip');
     }
+    if (settings.rules.chain) collapseChainEndingAt(el);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reply chains: pun threads, "and my axe", song lyrics a line at a time.
+  // Each comment walks up through its short ancestors; if that run is long
+  // enough, the top of it is collapsed along with everything under it. Walking
+  // up from each new comment also catches chains whose replies load later.
+  // ---------------------------------------------------------------------------
+
+  let classCache = new WeakMap();
+
+  function classified(el, body) {
+    let c = classCache.get(el);
+    if (!c) {
+      c = classifyBody(body);
+      classCache.set(el, c);
+    }
+    return c;
+  }
+
+  function parentComment(el) {
+    const sel = siteOf(el) === 'new' ? 'shreddit-comment' : '.thing.comment';
+    return el.parentElement?.closest(sel) ?? null;
+  }
+
+  function isChainLink(el) {
+    const body = bodyOf(el);
+    if (!body || body.childNodes.length === 0 || isAllowed(el)) return false;
+    const { kind, words } = classified(el, body);
+    return kind !== null || (words > 0 && words <= CHAIN_WORDS);
+  }
+
+  function collapseChainEndingAt(el) {
+    let run = 0;
+    let root = null;
+    for (let node = el; node && isChainLink(node); node = parentComment(node)) {
+      run += 1;
+      root = node;
+    }
+    if (run < settings.chainLength) return;
+    // Already collapsed, hidden, or collapsed by Reddit or the user before we got there.
+    if (root.getAttribute(ATTR) !== 'skip' || root.hasAttribute(NATIVE_ATTR)) return;
+    // Something further up may already be folding the whole chain away.
+    for (let up = parentComment(root); up; up = parentComment(up)) {
+      const st = up.getAttribute(ATTR);
+      if ((st === 'collapsed' || st === 'hidden') && !keepsReplies(up)) return;
+    }
+    apply(root, 'chain');
   }
 
   // Set when the user clicks "Show them" on the banner.
@@ -718,6 +835,7 @@
     if (!touched) return;
     settings = normalizeSettings(rawSettings);
     revealed = false;
+    classCache = new WeakMap();
     restoreAll();
     scan();
     updateCounter();

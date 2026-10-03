@@ -183,6 +183,50 @@
     <div slot="comment"><div class="md"><p>Another perfectly reasonable comment from a user you happen to have muted.</p></div></div>
   </shreddit-comment>
 
+  <shreddit-comment thingid="t1_cu1" author="yara" depth="0" data-expect="custom">
+    <div slot="commentMeta">yara · 2h — custom regex (custom scenario only)</div>
+    <div slot="comment"><div class="md"><p>Ackchyually, it is pronounced with a hard G and everyone knows it.</p></div></div>
+  </shreddit-comment>
+
+  <shreddit-comment thingid="t1_cu2" author="zed" depth="0" data-expect="custom">
+    <div slot="commentMeta">zed · 2h — custom plain text (custom scenario only)</div>
+    <div slot="comment"><div class="md"><p>For the Emperor, brothers!!</p></div></div>
+  </shreddit-comment>
+
+  <!-- A pun chain hanging off a real comment: the first pun collapses and takes the rest with it -->
+  <shreddit-comment thingid="t1_ch0" author="abe" depth="0" data-expect="keep">
+    <div slot="commentMeta">abe · 2h — real comment above a pun chain</div>
+    <div slot="comment"><div class="md"><p>The new stairs in the lobby took them almost two years to finish, which seems like a lot.</p></div></div>
+    <div id="comment-children">
+      <shreddit-comment thingid="t1_ch1" author="bea" depth="1" data-expect="chain">
+        <div slot="commentMeta">bea · 1h — pun 1 (chain root)</div>
+        <div slot="comment"><div class="md"><p>Well, it was a step up from the old ones.</p></div></div>
+        <div id="comment-children">
+          <shreddit-comment thingid="t1_ch2" author="cal" depth="2" data-expect="keep" data-chain-member="1">
+            <div slot="commentMeta">cal · 1h — pun 2</div>
+            <div slot="comment"><div class="md"><p>I can't stand the stairs, they're always up to something.</p></div></div>
+            <div id="comment-children">
+              <shreddit-comment thingid="t1_ch3" author="dee" depth="3" data-expect="keep" data-chain-member="1">
+                <div slot="commentMeta">dee · 1h — pun 3</div>
+                <div slot="comment"><div class="md"><p>Let's not take this to the next level.</p></div></div>
+              </shreddit-comment>
+            </div>
+          </shreddit-comment>
+        </div>
+      </shreddit-comment>
+      <shreddit-comment thingid="t1_ch4" author="eve" depth="1" data-expect="keep">
+        <div slot="commentMeta">eve · 1h — short reply, only two deep (not a chain)</div>
+        <div slot="comment"><div class="md"><p>Was it the contractor or the permits?</p></div></div>
+        <div id="comment-children">
+          <shreddit-comment thingid="t1_ch5" author="abe" depth="2" data-expect="keep">
+            <div slot="commentMeta">abe · 1h — short answer</div>
+            <div slot="comment"><div class="md"><p>Permits, mostly. The city was slow.</p></div></div>
+          </shreddit-comment>
+        </div>
+      </shreddit-comment>
+    </div>
+  </shreddit-comment>
+
   <!-- Real 2026 markup: slotted parts nested inside a grid wrapper, GIPHY gif as shreddit-player -->
   <shreddit-comment thingid="t1_p9chnd8" author="Dean-O-Machino" depth="0" data-expect="gif">
     <div class="grid comment-main-grid">
@@ -338,12 +382,19 @@
 <script>
   const SCENARIOS = {
     'defaults': {},
-    'everything on': { rules: { image: true, quote: true, short: true, score: true }, shortWords: 3, scoreBelow: 0 },
+    'everything on': { rules: { image: true, quote: true, short: true, score: true, chain: true }, shortWords: 3, scoreBelow: 0 },
     'hide mode': { mode: 'hide' },
     'keep replies': { keepReplies: true },
     'muted spamlord': { mutedUsers: ['SpamLord'] },
     'only gifs': { rules: { emote: false, phrase: false, link: false, bot: false, pasta: false } },
+    'always show bots': { allowedUsers: ['u/AutoModerator', 'helpful_user', 'RemindMeBot'] },
+    'custom patterns': { customPatterns: '/^ack+chy?ually/\n# a comment line\nFor the emperor brothers\n/[unclosed/' },
+    'chains': { rules: { chain: true } },
+    'chains + keep replies': { rules: { chain: true }, keepReplies: true },
+    'chains, length 4': { rules: { chain: true }, chainLength: 4 },
   };
+
+  const authorOf = (el) => (el.getAttribute('author') || el.dataset.author || '').toLowerCase();
 
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const $ = (id) => document.getElementById(id);
@@ -377,7 +428,10 @@
       if (expect === 'keep') shouldAct = false;
       else if (expect === 'native') shouldAct = s.mode === 'hide';
       else if (expect === 'muted') shouldAct = s.mutedUsers.includes('spamlord');
+      else if (expect === 'custom') shouldAct = s.customTests.length > 0;
+      else if (expect === 'chain') shouldAct = !!s.rules.chain && s.chainLength <= 3;
       else shouldAct = !!s.rules[expect];
+      if (s.allowedUsers.includes(authorOf(el))) shouldAct = false;
 
       const acted = isActed(el);
       const kind = el.getAttribute('data-rgc-kind') || '-';
@@ -391,6 +445,12 @@
         const bodyVisible = visible(bodyOf(el));
         if (parentActed && s.keepReplies && !bodyVisible) problems.push('reply hidden despite keepReplies');
         if (parentActed && !s.keepReplies && bodyVisible) problems.push('reply visible without keepReplies');
+      }
+      if (el.hasAttribute('data-chain-member') && s.mode === 'collapse') {
+        const root = document.querySelector('[thingid="t1_ch1"]');
+        const chained = root.getAttribute('data-rgc-kind') === 'chain' && isActed(root);
+        // Chains fold their replies away even with keepReplies on.
+        if (chained && visible(bodyOf(el))) problems.push('chain reply still visible');
       }
 
       const ok = problems.length === 0;

@@ -31,9 +31,16 @@ Every rule has its own switch in the popup.
 | Quote-only | Quotes the parent and adds nothing |
 | Short | Fewer than N words (you pick N) |
 | Downvoted | Score below N (you pick N) |
+| Reply chain | N or more short replies in a row, each answering the last: pun threads, "and my axe", song lyrics a line at a time. The first one collapses and takes the rest with it. |
 
 Plus:
 
+- **Your own patterns.** One per line. Plain text matches the whole comment, ignoring case and
+  punctuation (`for the emperor`). Wrap a line in slashes for a regex, which is matched against
+  the comment as shown and is always case-insensitive (`/^rock and stone/`). Lines starting with
+  `#` are ignored.
+- **Always show.** Usernames that are never collapsed, whatever they post. Handy for a bot you
+  actually like reading.
 - **Muted users.** A list of usernames whose comments are always collapsed.
 - **Keep replies visible.** Collapse the comment but leave the conversation under it open.
 - **Collapse or hide.** Fold them up with a badge, or remove them from the page entirely.
@@ -42,7 +49,8 @@ Plus:
 
 Things it will never do:
 
-- Collapse a comment that has real words in it (unless you turn on the short or downvoted rules).
+- Collapse a comment that has real words in it (unless you turn on the short, downvoted, or
+  reply-chain rules, or add a pattern of your own).
 - Re-collapse a comment you've expanded.
 - Touch a comment Reddit already collapsed.
 - Vote, post, report, or click anything on your behalf.
@@ -52,7 +60,7 @@ Things it will never do:
 **From the stores:**
 
 - Chrome, Brave, Edge: [Chrome Web Store](https://chromewebstore.google.com/detail/not-this/dafiegfbpcopimapifpcnfoklcajldjc)
-- Firefox Add-ons: coming soon
+- Firefox Add-ons (desktop and Firefox for Android): coming soon
 - Microsoft Edge Add-ons: coming soon (Edge can install from the Chrome Web Store in the meantime)
 
 **From source**, for developers or the impatient:
@@ -79,8 +87,10 @@ The code is not minified. You can read every line in [`src/`](src/) and [`popup/
 
 `src/content.js` runs on Reddit pages and watches the DOM with a `MutationObserver`, since
 Reddit loads comments lazily and navigates as a single-page app. Each comment is checked
-against the rules in order (muted user, bot, score, then the body-based rules) and gets at
-most one kind. For the body rules it strips media, then looks at what text remains: nothing
+against the rules in order (muted user, always-show user, your patterns, bot, score, then the
+body-based rules) and gets at most one kind. With the reply-chain rule on, each comment also
+walks up through its short ancestors; if the run is long enough, the top of it collapses.
+Walking up from the newest reply means chains still get caught when their replies load late. For the body rules it strips media, then looks at what text remains: nothing
 (GIF, image, emoji), only links, only a blockquote, a stock phrase, a copypasta opener, or too
 few words.
 

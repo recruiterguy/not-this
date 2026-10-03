@@ -15,8 +15,9 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   vertical-align: middle;
-  color: #fff;
-  background: #ff4500;
+  /* Mid-tone so it reads on both light and dark Reddit, whatever the OS theme. */
+  color: #e0531f;
+  background: rgba(255, 69, 0, 0.12);
   cursor: default;
   user-select: none;
 }
@@ -31,7 +32,7 @@
 }
 .rgc-badge--toggle:hover,
 .rgc-badge--toggle:focus-visible {
-  background: #d93a00;
+  background: rgba(255, 69, 0, 0.22);
   outline: none;
 }
 
@@ -43,9 +44,9 @@
   box-sizing: border-box;
   margin: 8px 0 12px;
   padding: 6px 12px;
-  border: 1px solid rgba(255, 69, 0, 0.45);
+  border: 1px solid rgba(128, 128, 128, 0.35);
   border-radius: 999px;
-  background: rgba(255, 69, 0, 0.10);
+  background: rgba(128, 128, 128, 0.08);
   color: inherit;
   font: 500 13px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   width: fit-content;
@@ -59,21 +60,23 @@
   margin-right: 8px;
   border-radius: 50%;
   background: #ff4500;
+  opacity: 0.7;
   vertical-align: middle;
 }
+/* Deliberately quiet: findable, but not competing with the thread for attention. */
 .rgc-banner__btn {
   appearance: none;
-  border: 0;
+  border: 1px solid rgba(128, 128, 128, 0.4);
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 2px 10px;
   font: 600 12px/1.4 inherit;
-  color: #fff;
-  background: #ff4500;
+  color: inherit;
+  background: transparent;
   cursor: pointer;
 }
 .rgc-banner__btn:hover,
 .rgc-banner__btn:focus-visible {
-  background: #d93a00;
+  background: rgba(128, 128, 128, 0.16);
   outline: none;
 }
 .rgc-banner--floating {

@@ -91,6 +91,11 @@ textarea {
   padding: 6px 8px;
 }
 
+.hint { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+.hint code { font-size: 11px; }
+.hint.error { color: #c62828; }
+@media (prefers-color-scheme: dark) { .hint.error { color: #ff8a80; } }
+
 .switch { position: relative; width: 36px; height: 20px; }
 .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
 .slider {

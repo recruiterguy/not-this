@@ -27,11 +27,17 @@ Each of these has its own switch in the popup, so you decide what counts.
 • Bot replies: AutoModerator, accounts ending in "bot", "I am a bot" footers, RemindMe! requests
 • Well-known copypasta
 
-Off by default, because they take judgment: image-only comments, replies that just quote the parent, comments under a word count you pick, and comments below a score you pick. There's also a mute list for usernames you're done reading.
+Off by default, because they take judgment: image-only comments, replies that just quote the parent, comments under a word count you pick, comments below a score you pick, and reply chains (pun threads, "and my axe", song lyrics posted a line at a time).
+
+MAKE IT YOURS
+
+• Your own patterns: add phrases, one per line, or wrap a line in slashes to use a regex
+• Always show: usernames that are never collapsed, like a summary bot you actually want to read
+• Mute list: usernames you're done reading
 
 WHAT IT NEVER DOES
 
-• Collapse a comment that has real words in it (unless you turn on the short-comment or score rules)
+• Collapse a comment that has real words in it (unless you turn on the short-comment, score, or reply-chain rules, or add your own patterns)
 • Re-collapse a comment you've expanded
 • Touch a comment Reddit already collapsed
 • Vote, post, report, or click anything on your behalf

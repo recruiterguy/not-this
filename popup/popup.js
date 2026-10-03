@@ -4,17 +4,20 @@ const api = globalThis.browser ?? globalThis.chrome;
 
 const RULE_DEFAULTS = {
   gif: true, image: false, emote: true, phrase: true, link: true,
-  bot: true, pasta: true, quote: false, short: false, score: false,
+  bot: true, pasta: true, quote: false, short: false, score: false, chain: false,
 };
 const DEFAULTS = {
   enabled: true, mode: 'collapse', showCounter: true, keepReplies: false,
-  rules: RULE_DEFAULTS, shortWords: 3, scoreBelow: 0, mutedUsers: [],
+  rules: RULE_DEFAULTS, shortWords: 3, scoreBelow: 0, chainLength: 3,
+  mutedUsers: [], allowedUsers: [], customPatterns: '',
 };
 const LABELS = {
   gif: 'GIF', image: 'image', emote: 'emoji', phrase: '"this"', link: 'link-only',
   bot: 'bot', pasta: 'copypasta', quote: 'quote-only', short: 'short', score: 'downvoted',
-  muted: 'muted',
+  muted: 'muted', custom: 'custom pattern', chain: 'reply chain',
 };
+// chrome.storage.sync allows 8 KB per item.
+const MAX_PATTERN_CHARS = 4000;
 
 const $ = (id) => document.getElementById(id);
 const $enabled = $('enabled');
@@ -26,6 +29,10 @@ const $scoreBelow = $('scoreBelow');
 const $keepReplies = $('keepReplies');
 const $showCounter = $('showCounter');
 const $mutedUsers = $('mutedUsers');
+const $allowedUsers = $('allowedUsers');
+const $chainLength = $('chainLength');
+const $customPatterns = $('customPatterns');
+const $patternErrors = $('patternErrors');
 const $status = $('status');
 
 function normalize(raw) {
@@ -34,7 +41,42 @@ function normalize(raw) {
   s.rules = { ...RULE_DEFAULTS, ...(r.rules || {}) };
   if ('includeImages' in r && !(r.rules && 'image' in r.rules)) s.rules.image = !!r.includeImages;
   s.mutedUsers = Array.isArray(s.mutedUsers) ? s.mutedUsers : [];
+  s.allowedUsers = Array.isArray(s.allowedUsers) ? s.allowedUsers : [];
+  s.customPatterns = typeof s.customPatterns === 'string' ? s.customPatterns : '';
   return s;
+}
+
+function parseUsers(text) {
+  const list = text
+    .split(/\r?\n/)
+    .map((u) => u.trim().replace(/^\/?u\//i, ''))
+    .filter(Boolean);
+  return [...new Set(list.map((u) => u.toLowerCase()))];
+}
+
+// Same parsing as compilePatterns() in content.js, but reports the bad lines.
+function patternErrors(text) {
+  const bad = [];
+  text.split(/\r?\n/).forEach((line, i) => {
+    const m = line.trim().match(/^\/(.+)\/([a-z]*)$/);
+    if (!m) return;
+    try {
+      new RegExp(m[1], [...new Set(`i${m[2]}`.replace(/[gy]/g, ''))].join(''));
+    } catch {
+      bad.push(i + 1);
+    }
+  });
+  return bad;
+}
+
+function renderPatternErrors() {
+  const bad = patternErrors($customPatterns.value);
+  const long = $customPatterns.value.length > MAX_PATTERN_CHARS;
+  const msgs = [];
+  if (bad.length) msgs.push(`Line${bad.length > 1 ? 's' : ''} ${bad.join(', ')}: not a valid regex, so ${bad.length > 1 ? 'they are' : 'it is'} skipped.`);
+  if (long) msgs.push(`Only the first ${MAX_PATTERN_CHARS.toLocaleString()} characters are saved.`);
+  $patternErrors.textContent = msgs.join(' ');
+  $patternErrors.hidden = msgs.length === 0;
 }
 
 let current = normalize({});
@@ -49,6 +91,10 @@ function render(s) {
   $keepReplies.checked = s.keepReplies;
   $showCounter.checked = s.showCounter;
   $mutedUsers.value = s.mutedUsers.join('\n');
+  $allowedUsers.value = s.allowedUsers.join('\n');
+  $chainLength.value = s.chainLength;
+  $customPatterns.value = s.customPatterns;
+  renderPatternErrors();
 }
 
 async function load() {
@@ -109,18 +155,29 @@ $showCounter.addEventListener('change', async () => {
   await save({ showCounter: $showCounter.checked });
 });
 
-let mutedTimer = null;
-$mutedUsers.addEventListener('input', () => {
-  clearTimeout(mutedTimer);
-  mutedTimer = setTimeout(async () => {
-    const list = $mutedUsers.value
-      .split(/\r?\n/)
-      .map((u) => u.trim().replace(/^\/?u\//i, ''))
-      .filter(Boolean);
-    await save({ mutedUsers: [...new Set(list.map((u) => u.toLowerCase()))] });
-    statsSoon();
-  }, 400);
+$chainLength.addEventListener('change', async () => {
+  const n = Math.min(10, Math.max(3, parseInt($chainLength.value, 10) || DEFAULTS.chainLength));
+  $chainLength.value = n;
+  await save({ chainLength: n });
+  statsSoon();
 });
+
+// Save text boxes a moment after the last keystroke.
+function onTyping(el, makePatch) {
+  let timer = null;
+  el.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      await save(makePatch());
+      statsSoon();
+    }, 400);
+  });
+}
+
+onTyping($mutedUsers, () => ({ mutedUsers: parseUsers($mutedUsers.value) }));
+onTyping($allowedUsers, () => ({ allowedUsers: parseUsers($allowedUsers.value) }));
+onTyping($customPatterns, () => ({ customPatterns: $customPatterns.value.slice(0, MAX_PATTERN_CHARS) }));
+$customPatterns.addEventListener('input', renderPatternErrors);
 
 // ---- Per-page stats ---------------------------------------------------------
 
